@@ -31,11 +31,11 @@ import { DEFAULT_CLOCK_FREQUENCY } from "../proxy/cmsis-dap";
 /**
  * @hidden
  */
-const MAX_BLOCK_COUNT = 1024;
+const MAX_BLOCK_COUNT = 256;
 /**
  * @hidden
  */
-const MAX_BLOCK_ADDRESS_MASK = 0x3FF;
+const MAX_BLOCK_ADDRESS_MASK = 0xFF;
 
 /**
  * Arm Debug Interface class
