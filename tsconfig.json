@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
         "target": "es5",
-        "module": "commonjs",
         "lib": [
             "es5",
             "dom",
+            "es2015.core",
             "es2015.promise"
         ],
         "strict": true,
@@ -13,6 +13,10 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "sourceMap": true,
-        "declaration": true
-    }
+        "declaration": true,
+        "declarationDir": "types"
+    },
+    "include": [
+        "src/**/*"
+    ]
 }

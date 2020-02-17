@@ -28,24 +28,17 @@ const bundleDir = "bundles";
 const bundleFile =  "dap.bundle.js";
 const bundleGlobal = "DAPjs";
 
-let watching = false;
 
 // Error handler suppresses exists during watch
-function handleError(cb) {
-    if (watching) this.emit("end");
-    else process.exit(1);
-    cb();
+function handleError(error) {
+    console.log(error.message);
+    process.exit(1);
 }
 
-// Set watching
-function setWatch(cb) {
-    watching = true;
-    cb();
-}
 
 // Clear built directories
 function clean(cb) {
-    if (!watching) del([nodeDir, typesDir]);
+    del.sync([nodeDir, typesDir]);
     cb();
 }
 
@@ -57,27 +50,10 @@ function lint() {
         formatter: "stylish"
     }))
     .pipe(gulpTslint.report({
-        emitError: !watching
+        emitError: true
     }))
 }
 
-// Create documentation
-function doc() {
-    return gulp.src(srcFiles)
-    .pipe(gulpTypedoc({
-        name: name,
-        readme: "./README.md",
-        theme: "./docs-theme",
-        module: "commonjs",
-        target: "es6",
-        mode: "file",
-        out: docsDir,
-        excludeExternals: true,
-        excludePrivate: true,
-        hideGenerator: true
-    }))
-    .on("error", handleError);
-}
 
 // Build TypeScript source into CommonJS Node modules
 function compile() {
@@ -112,8 +88,5 @@ function bundle() {
     .pipe(gulp.dest(bundleDir));
 }
 
-exports.default = gulp.series(lint, doc, clean, compile, bundle);
-exports.watch = gulp.series(setWatch, exports.default, function(cb) {
-    gulp.watch(srcFiles, gulp.series(lint, clean, compile, bundle));
-    cb();
-});
+exports.default = gulp.series(lint, clean, compile, bundle);
+

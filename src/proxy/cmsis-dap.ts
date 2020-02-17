@@ -69,6 +69,11 @@ const TRANSFER_OPERATION_SIZE = 5;
 export class CmsisDAP extends EventEmitter implements Proxy {
 
     /**
+     * Whether the device has been opened
+     */
+    public connected = false;
+
+    /**
      * The maximum DAPOperations which can be transferred
      */
     public operationCount: number;
@@ -246,6 +251,10 @@ export class CmsisDAP extends EventEmitter implements Proxy {
      * @returns Promise
      */
     public connect(): Promise<void> {
+        if (this.connected === true) {
+            return Promise.resolve();
+        }
+
         return this.transport.open()
         .then(() => this.send(DAPCommand.DAP_SWJ_CLOCK, new Uint32Array([this.clockFrequency])))
         .then(() => this.send(DAPCommand.DAP_CONNECT, new Uint8Array([this.mode])))
@@ -255,7 +264,10 @@ export class CmsisDAP extends EventEmitter implements Proxy {
             }
         })
         .then(() => this.configureTransfer(0, 100, 0))
-        .then(() => this.selectProtocol(DAPProtocol.SWD));
+        .then(() => this.selectProtocol(DAPProtocol.SWD))
+        .then(() => {
+            this.connected = true;
+        });
     }
 
     /**
@@ -263,9 +275,14 @@ export class CmsisDAP extends EventEmitter implements Proxy {
      * @returns Promise
      */
     public disconnect(): Promise<void> {
+        if (this.connected === false) {
+            return Promise.resolve();
+        }
+
         return this.send(DAPCommand.DAP_DISCONNECT)
+        .then(() => this.transport.close())
         .then(() => {
-            return this.transport.close();
+            this.connected = false;
         });
     }
 
@@ -412,7 +429,11 @@ export class CmsisDAP extends EventEmitter implements Proxy {
 
         if (typeof countOrValues !== "number") {
             // Transfer data
-            data.set(countOrValues, BLOCK_HEADER_SIZE);
+            countOrValues.forEach((countOrValue, index) => {
+                const offset = BLOCK_HEADER_SIZE + (index * 4);
+                // Transfer data
+                view.setUint32(offset, countOrValue, true);
+            });
         }
 
         return this.send(DAPCommand.DAP_TRANSFER_BLOCK, view)
@@ -425,21 +446,21 @@ export class CmsisDAP extends EventEmitter implements Proxy {
 
             // Transfer response
             const response = result.getUint8(3);
-            if (response & DAPTransferResponse.WAIT) {
+            if (response === DAPTransferResponse.WAIT) {
                 throw new Error("Transfer response WAIT");
             }
-            if (response & DAPTransferResponse.FAULT) {
+            if (response === DAPTransferResponse.FAULT) {
                 throw new Error("Transfer response FAULT");
             }
-            if (response & DAPTransferResponse.PROTOCOL_ERROR) {
+            if (response === DAPTransferResponse.PROTOCOL_ERROR) {
                 throw new Error("Transfer response PROTOCOL_ERROR");
             }
-            if (response & DAPTransferResponse.NO_ACK) {
+            if (response === DAPTransferResponse.NO_ACK) {
                 throw new Error("Transfer response NO_ACK");
             }
 
             if (typeof countOrValues === "number") {
-                return new Uint32Array(result.buffer.slice(4));
+                return new Uint32Array(result.buffer.slice(4, 4 + operationCount * 4));
             }
 
             return undefined;

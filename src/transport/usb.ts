@@ -21,17 +21,25 @@
 * SOFTWARE.
 */
 
-import {
-    LIBUSB_REQUEST_TYPE_CLASS,
-    LIBUSB_RECIPIENT_INTERFACE,
-    LIBUSB_ENDPOINT_IN,
-    LIBUSB_ENDPOINT_OUT,
-    Device,
-    InEndpoint,
-    OutEndpoint
-} from "usb";
+import { Device, InEndpoint, OutEndpoint} from "usb";
 import { Transport } from "./";
 
+/**
+ * @hidden
+ */
+const LIBUSB_REQUEST_TYPE_CLASS = (0x01 << 5);
+/**
+ * @hidden
+ */
+const LIBUSB_RECIPIENT_INTERFACE = 0x01;
+/**
+ * @hidden
+ */
+const LIBUSB_ENDPOINT_OUT = 0x00;
+/**
+ * @hidden
+ */
+const LIBUSB_ENDPOINT_IN = 0x80;
 /**
  * @hidden
  */
@@ -123,7 +131,14 @@ export class USB implements Transport {
                     throw new Error("No valid interfaces found.");
                 }
 
-                const selectedInterface = interfaces[0];
+                // Prefer interface with endpoints
+                let selectedInterface = interfaces.find(iface => iface.endpoints.length > 0);
+
+                // Otherwise use the first
+                if (!selectedInterface) {
+                    selectedInterface = interfaces[0];
+                }
+
                 this.interfaceNumber = selectedInterface.interfaceNumber;
 
                 // If we always want to use control transfer, don't find/set endpoints and claim interface
@@ -173,7 +188,7 @@ export class USB implements Transport {
      */
     public read(): Promise<DataView> {
         return new Promise((resolve, reject) => {
-            if (!this.interfaceNumber) return reject("No device opened");
+            if (this.interfaceNumber === undefined) return reject("No device opened");
 
             // Use endpoint if it exists
             if (this.endpointIn) {
@@ -210,7 +225,7 @@ export class USB implements Transport {
         const buffer = this.bufferSourceToBuffer(extended);
 
         return new Promise((resolve, reject) => {
-            if (!this.interfaceNumber) return reject("No device opened");
+            if (this.interfaceNumber === undefined) return reject("No device opened");
 
             // Use endpoint if it exists
             if (this.endpointOut) {
