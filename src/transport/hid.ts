@@ -58,7 +58,8 @@ export class HID implements Transport {
             }
 
             try {
-                this.device = new nodeHID(this.path);
+                const hid = require("node-hid");
+                this.device = new hid.HID(this.path);
                 resolve();
             } catch (ex) {
                 reject(ex);

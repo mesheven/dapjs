@@ -1,6 +1,5 @@
 /*
-* DAPjs
-* Copyright Arm Limited 2018
+* The MIT License (MIT)
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +20,36 @@
 * SOFTWARE.
 */
 
-export { CmsisDAP } from "./proxy";
-export { DAPLink } from "./daplink";
-export { ADI } from "./dap";
-export { CortexM } from "./processor";
-export { WebUSB } from "./transport/webusb";
+import { WebUSB, CortexM } from "dapjs";
+
+export interface USB {
+    requestDevice(options?: USBDeviceRequestOptions): Promise<USBDevice>;
+}
+
+export class Registers {
+
+    constructor(private usb: USB = navigator.usb) {
+    }
+
+    public read(count: number): Promise<string[]> {
+        return this.usb.requestDevice({
+            filters: [{vendorId: 0xD28}]
+        })
+        .then(async device => {
+            const transport = new WebUSB(device);
+            const processor = new CortexM(transport);
+
+            await processor.connect();
+            await processor.halt();
+
+            const registers = Array.from({ length: count }, (_, index) => index);
+            const values = await processor.readCoreRegisters(registers);
+
+            await processor.resume();
+            await processor.disconnect();
+
+            const result = values.map(register => ("00000000" + register.toString(16)).slice(-8));
+            return result;
+        });
+    }
+}

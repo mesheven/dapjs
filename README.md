@@ -1,13 +1,14 @@
 # DAP.js
 
 [![Circle CI](https://circleci.com/gh/ARMmbed/dapjs.svg?style=shield&circle-token=d37ef109d0134f6f8e4eb12a65214a8b159f77d8)](https://circleci.com/gh/ARMmbed/dapjs/)
+[![npm](https://img.shields.io/npm/dm/dapjs.svg)](https://www.npmjs.com/package/dapjs)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://spdx.org/licenses/MIT.html)
 
 DAP.js is a JavaScript interface to [CMSIS-DAP](https://www.keil.com/pack/doc/CMSIS/DAP/html/index.html), enabling access to Arm Microcontrollers using [Node.js](https://nodejs.org/) or in the browser using [WebUSB](https://wicg.github.io/webusb/).
 
 ## Prerequisites
 
-[Node.js > v6.15.0](https://nodejs.org), which includes `npm`
+[Node.js > v8.14.0](https://nodejs.org), which includes `npm`
 
 ## Installation
 
@@ -81,7 +82,7 @@ $ npm install webusb
 In the browser, require the library:
 
 ```html
-<script type="text/javascript" src="bundles/dap.bundle.js"></script>
+<script type="text/javascript" src="dist/dap.umd.js"></script>
 ```
 
 In Node.js Require the libraries:

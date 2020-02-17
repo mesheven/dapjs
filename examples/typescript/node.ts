@@ -20,49 +20,40 @@
 * SOFTWARE.
 */
 
-const EventEmitter = require("events");
-const DAPjs = require("../../");
+import { Registers } from "./registers";
+import { USB, USBDevice } from "webusb";
+import { stdin } from "process";
 
-// Emit keyboard input
-const inputEmitter = new EventEmitter();
-process.stdin.setRawMode(true);
-process.stdin.setEncoding("utf8");
-process.stdin.on("readable", () => {
-    let input;
-    while (input = process.stdin.read()) {
+function handleDevicesFound(devices: USBDevice[], selectFn?: (device: USBDevice) => void) {
+    stdin.setRawMode!(true);
+    stdin.setEncoding("utf8");
+    stdin.on("readable", () => {
+        const input = process.stdin.read().toString();
         if (input === "\u0003") {
             process.exit();
-        } else if (input !== null) {
-            let index = parseInt(input);
-            inputEmitter.emit("input", index);
+        } else {
+            const index = parseInt(input);
+            if (index && index <= devices.length) {
+                stdin.setRawMode!(false);
+                selectFn!(devices[index - 1]);
+            }
         }
-    }
-});
+    });
 
-// Read device registers
-function readRegisters(transport) {
-    const processor = new DAPjs.CortexM(transport);
-
-    return processor.connect()
-    .then(() => {
-        return processor.halt();
-    })
-    .then(() => {
-        const registers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-        return processor.readCoreRegisters(registers);
-    })
-    .then(registers => {
-        registers.forEach((register, index) => {
-            console.log(`R${index}: ${("00000000" + register.toString(16)).slice(-8)}`);
-        });
-        return processor.resume();
-    })
-    .then(() => {
-        return processor.disconnect();
+    console.log("select a device to see it's active configuration:");
+    devices.forEach((device, index) => {
+        console.log(`${index + 1}: ${device.productName || device.serialNumber}`);
     });
 }
 
-module.exports = {
-    inputEmitter: inputEmitter,
-    readRegisters: readRegisters
-};
+const usb = new USB({
+    devicesFound: handleDevicesFound
+});
+
+const registers = new Registers(usb);
+registers.read(16)
+.then(values => {
+    values.forEach((register, index) => {
+        console.log(`R${index}: ${register}`);
+    });
+});
