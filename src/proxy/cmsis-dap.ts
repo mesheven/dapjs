@@ -251,9 +251,10 @@ export class CmsisDAP extends EventEmitter implements Proxy {
      * @returns Promise
      */
     public connect(): Promise<void> {
-        if (this.connected === true) {
-            return Promise.resolve();
-        }
+        // for fixed dapLink plug out when no disconnect
+        // if (this.connected === true) {
+        //    return Promise.resolve();
+        // }
 
         return this.transport.open()
         .then(() => this.send(DAPCommand.DAP_SWJ_CLOCK, new Uint32Array([this.clockFrequency])))
