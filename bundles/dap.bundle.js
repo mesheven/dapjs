@@ -79,7 +79,8 @@ var ADI = /** @class */ (function () {
                 }, timeout);
             }
             return chain(false)
-                .then(function () { return resolve(); });
+                .then(function () { return resolve(); })
+                .catch(function (err) { return reject(err); });
         });
     };
     ADI.prototype.concatTypedArray = function (arrays) {
@@ -1497,10 +1498,11 @@ var CmsisDAP = /** @class */ (function (_super) {
      * @returns Promise
      */
     CmsisDAP.prototype.connect = function () {
+        // for fixed dapLink plug out when no disconnect
+        // if (this.connected === true) {
+        //    return Promise.resolve();
+        // }
         var _this = this;
-        if (this.connected === true) {
-            return Promise.resolve();
-        }
         return this.transport.open()
             .then(function () { return _this.send(17 /* DAP_SWJ_CLOCK */, new Uint32Array([_this.clockFrequency])); })
             .then(function () { return _this.send(2 /* DAP_CONNECT */, new Uint8Array([_this.mode])); })
