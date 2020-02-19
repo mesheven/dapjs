@@ -99,7 +99,8 @@ export class ADI implements DAP {
             }
 
             return chain(false)
-            .then(() => resolve());
+            .then(() => resolve())
+            .catch(err => reject(err));
         });
     }
 

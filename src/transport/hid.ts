@@ -88,15 +88,18 @@ export class HID implements Transport {
     public read(): Promise<DataView> {
         return new Promise((resolve, reject) => {
             if (!this.device) return reject("No device opened");
+            try {
+                this.device.read((error: string, data: number[]) => {
+                    if (error) {
+                        return reject(error);
+                    }
 
-            this.device.read((error: string, data: number[]) => {
-                if (error) {
-                    return reject(error);
-                }
-
-                const buffer = new Uint8Array(data).buffer;
-                resolve(new DataView(buffer));
-            });
+                    const buffer = new Uint8Array(data).buffer;
+                    resolve(new DataView(buffer));
+                });
+            } catch (ex) {
+                reject(ex);
+            }
         });
     }
 
@@ -124,11 +127,14 @@ export class HID implements Transport {
             if (this.os === "win32") {
                 array.unshift(0);  // prepend throwaway byte
             }
+            try {
+                const bytesWritten = this.device.write(array);
+                if (bytesWritten !== array.length) return reject("Incorrect bytecount written");
 
-            const bytesWritten = this.device.write(array);
-            if (bytesWritten !== array.length) return reject("Incorrect bytecount written");
-
-            resolve();
+                resolve();
+            } catch (ex) {
+                reject(ex);
+            }
         });
     }
 }
